@@ -36,7 +36,51 @@ Never run `sudo python3 install.py` — it breaks your virtual environment.
 
 *Stay clean. Stay in userland.*  
 — Shieldpy Team
---
+
+## 🔄 How to Update BackdoorBuster
+
+### **Quick Update (Recommended):**
+```bash
+cd ~/BackdoorBuster
+git pull origin main
+```
+
+### **Update with Dependencies:**
+```bash
+cd ~/BackdoorBuster
+git pull origin main
+
+# If using virtual environment
+source venv/bin/activate
+pip install --upgrade -r requirements_core.txt
+
+# If using system packages
+pip3 install --user --upgrade Flask Jinja2 termcolor psutil
+```
+
+### **Kali Linux Update:**
+```bash
+cd ~/BackdoorBuster
+git pull origin main
+chmod +x *.sh
+./install_kali.sh  # Re-run installer to get latest features
+```
+
+### **Force Clean Update (if issues):**
+```bash
+cd ~
+rm -rf BackdoorBuster
+git clone https://github.com/Qixpy/BackdoorBuster.git
+cd BackdoorBuster
+chmod +x install_kali.sh && ./install_kali.sh
+```
+
+### **Check Version:**
+```bash
+python3 main.py --version
+```
+
+---
 ## Overview
 
 BackdoorBuster is a comprehensive malware detection and analysis tool designed for cybersecurity professionals. It provides both command-line and web-based interfaces for scanning, analyzing, and managing potential security threats across multiple platforms.
