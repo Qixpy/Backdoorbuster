@@ -82,6 +82,13 @@ except ImportError:
     Template = None
 
 try:
+    from flask import Flask
+    FLASK_AVAILABLE = True
+except ImportError:
+    FLASK_AVAILABLE = False
+    Flask = None
+
+try:
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter
     REPORTLAB_AVAILABLE = True
@@ -1367,11 +1374,16 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
         """Start the web interface server"""
         try:
             import webbrowser
-            from flask import Flask, render_template, request, jsonify
             
+            if not FLASK_AVAILABLE:
+                print("❌ Web server requires Flask. Install with: pip install Flask")
+                return
+                
             if not JINJA2_AVAILABLE:
                 print("❌ Web server requires Jinja2. Install with: pip install Jinja2")
                 return
+            
+            from flask import Flask, render_template, request, jsonify
             
             app = Flask(__name__, template_folder='templates')
             

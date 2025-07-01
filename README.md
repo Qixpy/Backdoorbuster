@@ -48,6 +48,20 @@ cd BackdoorBuster
 chmod +x install.sh && ./install.sh
 ```
 
+**Kali Linux (Recommended):**
+```bash
+git clone https://github.com/Qixpy/BackdoorBuster.git
+cd BackdoorBuster
+chmod +x install_kali.sh && ./install_kali.sh
+```
+
+**Kali Linux (Simple - if main installer fails):**
+```bash
+git clone https://github.com/Qixpy/BackdoorBuster.git
+cd BackdoorBuster
+chmod +x install_kali_simple.sh && ./install_kali_simple.sh
+```
+
 **Universal (Python):**
 ```bash
 git clone https://github.com/Qixpy/BackdoorBuster.git
@@ -127,6 +141,42 @@ Edit `config.json` to customize:
     }
 }
 ```
+
+## Troubleshooting
+
+### Kali Linux Issues
+
+If installation fails on Kali Linux, try these solutions:
+
+**Run Diagnostics:**
+```bash
+chmod +x diagnose_kali.sh && ./diagnose_kali.sh
+```
+
+**Use Simple Installer:**
+```bash
+chmod +x install_kali_simple.sh && ./install_kali_simple.sh
+```
+
+**Manual Installation:**
+```bash
+# Install system dependencies
+sudo apt update
+sudo apt install python3 python3-pip python3-flask python3-jinja2
+
+# Install Python packages
+pip3 install --user Flask Jinja2 termcolor psutil
+
+# Test installation
+python3 main.py --help
+```
+
+### Common Issues
+
+- **Permission Errors**: Try installing packages with `--user` flag
+- **Import Errors**: Ensure Flask and Jinja2 are installed
+- **Virtual Environment Issues**: Use the simple installer instead
+- **Missing Dependencies**: Install with `pip3 install --user [package]`
 
 ## Documentation
 
