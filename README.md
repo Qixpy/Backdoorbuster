@@ -8,6 +8,35 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/Qixpy/BackdoorBuster)
 
+## 🛠️ Fix: Permission Denied During Installation
+
+If you see an error like:
+
+```bash
+❌ Failed to copy config template: [Errno 13] Permission denied: '/home/youruser/BackdoorBuster/config.json'
+```
+
+It means some files were created with sudo and are now owned by root, blocking normal access.
+
+**✅ Solution (run this):**
+```bash
+sudo chown -R $USER:$USER ~/BackdoorBuster
+```
+
+Then activate your virtual environment and reinstall:
+
+```bash
+source venv/bin/activate
+python3 install.py
+```
+
+**🚫 Do NOT use sudo inside venv**
+
+Never run `sudo python3 install.py` — it breaks your virtual environment.
+
+*Stay clean. Stay in userland.*  
+— Shieldpy Team
+--
 ## Overview
 
 BackdoorBuster is a comprehensive malware detection and analysis tool designed for cybersecurity professionals. It provides both command-line and web-based interfaces for scanning, analyzing, and managing potential security threats across multiple platforms.
