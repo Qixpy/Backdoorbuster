@@ -1389,11 +1389,10 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
             
             @app.route('/')
             def index():
-                # Get list of log files
+                # Get list of log files from the logs directory
                 log_files = []
-                logs_dir = Path(self.config.get('logging', {}).get('file', './logs')).parent
-                if logs_dir.exists():
-                    log_files = [f.name for f in logs_dir.glob('*.json')]
+                if self.logs_dir.exists():
+                    log_files = [f.name for f in self.logs_dir.glob('*.json')]
                 
                 return render_template('log.html', 
                                      log_files=log_files,
@@ -1411,10 +1410,8 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
             print(f"❌ Failed to start web server: {e}")
     
     def scan_directory(self, directory):
-        """Scan a specific directory"""
+        """Scan a specific directory and create log files"""
         print(f"🔍 Scanning directory: {directory}")
-        print("⚠️ Full scanning functionality requires additional modules")
-        print("This is a basic scan simulation")
         
         try:
             path = Path(directory)
@@ -1422,17 +1419,152 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                 print(f"❌ Directory not found: {directory}")
                 return
             
+            # Create logs directory if it doesn't exist
+            self.logs_dir.mkdir(exist_ok=True)
+            
+            # Generate timestamp for log file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_filename = f"scan_{timestamp}.json"
+            log_path = self.logs_dir / log_filename
+            
+            scan_results = {
+                "scan_info": {
+                    "timestamp": datetime.now().isoformat(),
+                    "target_directory": str(directory),
+                    "scanner": "BackdoorBuster v1.0",
+                    "scan_type": "directory_scan"
+                },
+                "files_scanned": [],
+                "threats_found": [],
+                "summary": {}
+            }
+            
             files_scanned = 0
+            suspicious_files = 0
+            
+            print("📊 Scanning files and creating detailed logs...")
+            
             for file_path in path.rglob('*'):
                 if file_path.is_file():
                     files_scanned += 1
-                    if files_scanned <= 10:  # Show first 10 files
-                        print(f"  📄 {file_path}")
+                    
+                    # Create file entry
+                    file_entry = {
+                        "path": str(file_path),
+                        "size": file_path.stat().st_size,
+                        "extension": file_path.suffix.lower(),
+                        "status": "clean"
+                    }
+                    
+                    # Check for suspicious extensions
+                    suspicious_extensions = ['.exe', '.dll', '.scr', '.bat', '.cmd', '.ps1', '.vbs', '.jar']
+                    if file_path.suffix.lower() in suspicious_extensions:
+                        file_entry["status"] = "suspicious"
+                        file_entry["reason"] = "Suspicious file extension"
+                        suspicious_files += 1
+                        
+                        scan_results["threats_found"].append({
+                            "file": str(file_path),
+                            "threat_type": "Suspicious Extension",
+                            "severity": "medium",
+                            "description": f"File with potentially dangerous extension: {file_path.suffix}"
+                        })
+                    
+                    # Check for large files
+                    if file_path.stat().st_size > 100 * 1024 * 1024:  # > 100MB
+                        file_entry["status"] = "large_file"
+                        file_entry["reason"] = "Unusually large file"
+                    
+                    scan_results["files_scanned"].append(file_entry)
+                    
+                    # Show progress for first 10 files
+                    if files_scanned <= 10:
+                        status_emoji = "⚠️" if file_entry["status"] == "suspicious" else "📄"
+                        print(f"  {status_emoji} {file_path}")
+                    elif files_scanned % 100 == 0:
+                        print(f"  📊 Scanned {files_scanned} files...")
+            
+            # Create summary
+            scan_results["summary"] = {
+                "total_files": files_scanned,
+                "suspicious_files": suspicious_files,
+                "clean_files": files_scanned - suspicious_files,
+                "scan_duration": "completed",
+                "overall_status": "suspicious" if suspicious_files > 0 else "clean"
+            }
+            
+            # Write log file
+            with open(log_path, 'w', encoding='utf-8') as f:
+                json.dump(scan_results, f, indent=2, ensure_ascii=False)
+            
+            # Also create an HTML report
+            html_filename = f"scan_report_{timestamp}.html"
+            html_path = self.logs_dir / html_filename
+            self.create_html_report(scan_results, html_path)
             
             print(f"✅ Scanned {files_scanned} files")
+            if suspicious_files > 0:
+                print(f"⚠️  Found {suspicious_files} suspicious files")
+            print(f"📋 Log saved to: {log_path}")
+            print(f"📋 HTML report saved to: {html_path}")
             
         except Exception as e:
             print(f"❌ Scan failed: {e}")
+    
+    def create_html_report(self, scan_results, output_path):
+        """Create an HTML report from scan results"""
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BackdoorBuster Scan Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+        .header {{ background: #2c3e50; color: white; padding: 20px; border-radius: 5px; }}
+        .summary {{ background: white; padding: 20px; margin: 20px 0; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
+        .threat {{ background: #ffe6e6; padding: 10px; margin: 10px 0; border-left: 4px solid #e74c3c; }}
+        .clean {{ color: #27ae60; }}
+        .suspicious {{ color: #e74c3c; }}
+        table {{ width: 100%; border-collapse: collapse; background: white; }}
+        th, td {{ padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #34495e; color: white; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>�️ BackdoorBuster Scan Report</h1>
+        <p>Generated: {scan_results['scan_info']['timestamp']}</p>
+        <p>Target: {scan_results['scan_info']['target_directory']}</p>
+    </div>
+    
+    <div class="summary">
+        <h2>📊 Scan Summary</h2>
+        <p><strong>Total Files:</strong> {scan_results['summary']['total_files']}</p>
+        <p><strong>Clean Files:</strong> <span class="clean">{scan_results['summary']['clean_files']}</span></p>
+        <p><strong>Suspicious Files:</strong> <span class="suspicious">{scan_results['summary']['suspicious_files']}</span></p>
+        <p><strong>Overall Status:</strong> {scan_results['summary']['overall_status'].upper()}</p>
+    </div>
+    
+    {"<div class='summary'><h2>🚨 Threats Found</h2>" + "".join([f"<div class='threat'><strong>{threat['threat_type']}</strong><br>{threat['file']}<br>{threat['description']}</div>" for threat in scan_results['threats_found']]) + "</div>" if scan_results['threats_found'] else ""}
+    
+    <div class="summary">
+        <h2>📁 File Details</h2>
+        <table>
+            <tr><th>File Path</th><th>Size</th><th>Extension</th><th>Status</th></tr>
+            {"".join([f"<tr><td>{file['path']}</td><td>{file['size']} bytes</td><td>{file['extension']}</td><td class='{file['status']}'>{file['status']}</td></tr>" for file in scan_results['files_scanned'][:100]])}
+        </table>
+        {f"<p><em>Showing first 100 files. Total: {len(scan_results['files_scanned'])} files</em></p>" if len(scan_results['files_scanned']) > 100 else ""}
+    </div>
+    
+    <div class="summary">
+        <p><em>Report generated by BackdoorBuster - Created by Shieldpy (https://shieldpy.com)</em></p>
+    </div>
+</body>
+</html>
+        """
+        
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
     
     def list_logs(self):
         """List available log files"""

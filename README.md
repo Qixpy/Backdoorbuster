@@ -165,6 +165,38 @@ python main.py --scan ~/.config ~/.ssh ~/.local/bin
 python main.py --web-server
 ```
 
+## 📁 Log Files Location
+
+### **Default Log Directory:**
+```bash
+./logs/                    # Main log directory
+├── *.json                # Scan results (JSON format)
+├── *.html                # Scan reports (HTML format)
+└── backdoorbuster.log    # Application logs
+```
+
+### **Find Your Logs:**
+```bash
+# List available logs
+python3 main.py --logs
+
+# Check logs directory
+ls -la logs/
+
+# Search for log files
+find . -name "*.log" -o -name "*.json" -o -name "*.html"
+
+# View logs in web browser
+python3 main.py --web-server
+```
+
+### **Kali Linux Log Locations:**
+```bash
+~/BackdoorBuster/logs/           # Primary location
+~/BackdoorBuster/*.json          # Scan results
+~/BackdoorBuster/*.html          # HTML reports
+```
+
 **Using Launchers (after installation):**
 ```bash
 # Windows
