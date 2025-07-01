@@ -1,0 +1,19 @@
+# BackdoorBuster Core Requirements
+# Essential dependencies for basic functionality
+
+# Web framework for log viewer
+Flask>=2.0.0
+
+# Template engine (required for web interface)
+Jinja2>=3.0.0
+
+# Terminal colors (optional but recommended)
+termcolor>=1.1.0
+
+# Essential dependencies for full functionality (install these if needed):
+# psutil>=5.8.0              # System monitoring
+# psycopg2-binary>=2.9.0     # Database connectivity
+# cryptography>=3.4.8       # Encryption support
+# yara-python>=4.2.0         # YARA rules engine
+# scapy>=2.4.5               # Network analysis
+# reportlab>=3.5.0           # PDF report generation

@@ -1,0 +1,239 @@
+# BackdoorBuster .gitignore
+
+# Configuration and sensitive files
+config.json
+*.key
+*.pem
+*.p12
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+logs/
+*.log
+*.log.*
+
+# Quarantine and data directories
+data/quarantine/
+data/backups/
+data/temp/
+data/*.sql
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Memory dumps and forensics
+*.dmp
+*.mem
+*.vmem
+core.*
+
+# YARA compiled rules
+*.yarc
+
+# Reports (unless specifically needed)
+reports/
+*.pdf
+*.html
+
+# Backup files
+*.bak
+*.backup
+backup_*
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Process memory dumps
+volatility_cache/
+vol_cache/
+
+# Network captures
+*.pcap
+*.pcapng
+*.cap
+
+# Certificate and key files
+*.crt
+*.cert
+*.cer
+*.der
+*.pfx
+
+# Local configuration overrides
+local_config.json
+dev_config.json
+test_config.json
+
+# Sample malware (never commit real malware!)
+samples/
+malware/
+suspicious/
+
+# Windows specific
+*.exe
+*.dll
+*.sys
+*.msi
+
+# macOS specific
+*.dmg
+*.pkg
+
+# Linux specific
+*.deb
+*.rpm
+*.AppImage
+
+# Development and testing
+test_data/
+test_files/
+mock_data/
+.pytest_cache/
+.coverage
+
+# Documentation builds
+docs/_build/
+docs/build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Custom additions for BackdoorBuster
+# Volatility profiles
+rules/profiles/*.zip
+rules/profiles/*.json
+
+# YARA rule sources (if downloaded)
+rules/external/
+
+# Analysis outputs
+analysis_output/
+scan_results/
+
+# Performance profiles
+*.prof
+profile_output/
+
+# Database dumps
+*.dump
+db_backup_*

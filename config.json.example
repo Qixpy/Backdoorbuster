@@ -1,0 +1,86 @@
+{
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "backdoorbuster",
+        "user": "backdoorbuster_user",
+        "password": "PLACEHOLDER_PASSWORD"
+    },
+    "encryption": {
+        "enabled": true,
+        "algorithm": "fernet"
+    },
+    "yara": {
+        "rules_path": "rules/yara_rules.yar",
+        "auto_update": true,
+        "external_sources": [],
+        "custom_rules_dir": "rules/custom"
+    },
+    "monitoring": {
+        "enabled": false,
+        "interval": 60,
+        "cpu_threshold": 80,
+        "memory_threshold": 500,
+        "network_monitoring": true
+    },
+    "quarantine": {
+        "path": "data/quarantine",
+        "auto_quarantine": false,
+        "quarantine_threshold": 70,
+        "encrypt_quarantine": true,
+        "retention_days": 30
+    },
+    "scanning": {
+        "max_file_size": 104857600,
+        "scan_timeout": 3600,
+        "entropy_threshold": 7.5,
+        "parallel_workers": 4,
+        "skip_extensions": [".tmp", ".temp", ".cache"],
+        "deep_scan_extensions": [".exe", ".dll", ".scr", ".bat", ".ps1", ".sh"]
+    },
+    "logging": {
+        "level": "INFO",
+        "max_size": "10MB",
+        "retention_days": 30,
+        "log_to_file": true,
+        "log_to_console": true,
+        "encrypt_logs": true
+    },
+    "reporting": {
+        "default_format": "html",
+        "encrypt_reports": false,
+        "include_screenshots": false,
+        "max_report_size": "50MB"
+    },
+    "security": {
+        "require_password": true,
+        "session_timeout": 3600,
+        "max_login_attempts": 3,
+        "audit_all_actions": true
+    },
+    "updates": {
+        "auto_check": true,
+        "check_interval": 86400,
+        "backup_before_update": true,
+        "update_yara_rules": true
+    },
+    "performance": {
+        "cache_enabled": true,
+        "cache_size": "100MB",
+        "preload_yara_rules": true,
+        "optimize_database": true
+    },
+    "integrations": {
+        "virustotal_api_key": "",
+        "siem_enabled": false,
+        "webhook_url": "",
+        "email_notifications": false
+    },
+    "advanced": {
+        "volatility_profile_path": "rules/profiles",
+        "kernel_debugging": false,
+        "memory_dump_analysis": true,
+        "network_capture": false,
+        "behavioral_analysis": true
+    }
+}

@@ -1,0 +1,110 @@
+BackdoorBuster ASCII Art Logo
+=============================
+
+Main Logo (Large):
+```
+╔══════════════════════════════════════════════════════════════╗
+║                      BackdoorBuster v1.0                    ║
+║              Elite Backdoor & Malware Detection              ║
+║                   Cross-Platform Security Tool              ║
+║                                                              ║
+║                 Powered by PostgreSQL                       ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+Compact Logo (Medium):
+```
+🛡️  BackdoorBuster - Elite Malware Detection
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Cross-Platform | PostgreSQL | YARA Rules
+```
+
+Minimal Logo (Small):
+```
+🛡️  BackdoorBuster v1.0
+```
+
+Terminal Icons:
+- Main: 🛡️
+- Scanning: 🔍
+- Threat: 🚨
+- Success: ✅
+- Warning: ⚠️
+- Error: ❌
+- Info: ℹ️
+- Memory: 🧠
+- Network: 🌐
+- File: 📁
+- Process: ⚙️
+- Database: 🗄️
+- Report: 📊
+- Export: 💾
+- Config: ⚙️
+- Monitor: 👁️
+- Shield: 🛡️
+- Lock: 🔒
+- Key: 🔐
+- Clean: ✨
+- Attack: ⚔️
+
+Color Scheme:
+- Primary: Cyan (#00d4ff)
+- Success: Green (#4caf50)
+- Warning: Yellow (#ffa726)
+- Error: Red (#ff4757)
+- Info: Blue (#2196f3)
+- Background: Dark Gray (#1a1a1a)
+- Text: Light Gray (#e0e0e0)
+
+Banner Variations:
+
+Startup Banner:
+```
+        ╔══════════════════════════════════════════════════════════════╗
+        ║                      BackdoorBuster v1.0                    ║
+        ║              Elite Backdoor & Malware Detection              ║
+        ║                   Cross-Platform Security Tool              ║
+        ║                                                              ║
+        ║                 Powered by PostgreSQL                       ║
+        ╚══════════════════════════════════════════════════════════════╝
+```
+
+Loading Banner:
+```
+🛡️  Initializing BackdoorBuster...
+    ▓▓▓▓▓▓▓▓▓▓ 100%
+    
+✅ Ready for threat detection!
+```
+
+Simple Header:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡️  BackdoorBuster - Elite Malware Detection & Mitigation System
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Command Prompt:
+```
+🛡️  backdoorbuster> 
+```
+
+Status Indicators:
+- Scanning: [🔄] Scanning...
+- Analyzing: [🧠] Analyzing...
+- Monitoring: [👁️ ] Monitoring active
+- Connected: [🔗] Database connected
+- Encrypted: [🔐] Config encrypted
+- Clean: [✅] No threats detected
+- Threat: [🚨] Threat detected!
+
+Usage in HTML Reports:
+The shield emoji (🛡️) serves as the favicon equivalent in HTML reports
+and provides consistent branding across all output formats.
+
+ASCII Art Generator Settings:
+If recreating with ASCII art tools:
+- Font: Block or Banner
+- Width: 66 characters
+- Style: Box drawing characters
+- Alignment: Center
