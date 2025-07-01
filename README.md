@@ -171,9 +171,25 @@ python main.py --web-server
 ```bash
 ./logs/                    # Main log directory
 ├── *.json                # Scan results (JSON format)
-├── *.html                # Scan reports (HTML format)
+├── *.html                # Simple scan reports (basic HTML)
 └── backdoorbuster.log    # Application logs
 ```
+
+### **Two Types of Reports:**
+
+**1. 📊 Web Dashboard (Advanced Interface):**
+- Access via: `python3 main.py --web-server`
+- Features: Interactive tables, real-time data, advanced styling
+- URL: http://127.0.0.1:5000
+- Uses `templates/log.html` template
+
+**2. 📄 Standalone HTML Reports (Simple):**
+- Generated automatically during scans
+- Files: `scan_report_*.html` in logs directory
+- Features: Basic styling, static content, printable format
+- Purpose: Quick viewing, sharing, archiving
+
+Both reports show the same scan data but in different formats.
 
 ### **Find Your Logs:**
 ```bash
@@ -288,6 +304,35 @@ python3 main.py --help
 - **Import Errors**: Ensure Flask and Jinja2 are installed
 - **Virtual Environment Issues**: Use the simple installer instead
 - **Missing Dependencies**: Install with `pip3 install --user [package]`
+- **Web Server Won't Start**: Install Flask and Jinja2: `pip3 install --user Flask Jinja2`
+- **Empty Log Files**: Update to latest version with `git pull origin main`
+- **No Scan Results**: Logs are created in `./logs/` directory after scanning
+
+### **🌐 Web Server Issues**
+
+If web server fails to start:
+```bash
+# Install required dependencies
+pip3 install --user Flask Jinja2
+
+# Test web server
+python3 main.py --web-server
+
+# Alternative: Check if templates directory exists
+ls -la templates/
+```
+
+**Web Server Troubleshooting:**
+- **"TypeError: '>=' not supported"**: Update to latest version with `git pull origin main`
+- **Empty Dashboard**: Run a scan first with `--scan` to generate data
+- **Flask Import Error**: Install Flask: `pip3 install --user Flask`
+- **Template Not Found**: Check `templates/log.html` exists
+- **No Scan Data**: Web dashboard loads the latest JSON scan file automatically
+
+**Web Dashboard vs HTML Reports:**
+- Web Dashboard: Interactive interface at http://127.0.0.1:5000
+- HTML Reports: Simple static files in `logs/scan_report_*.html`
+- Both show same data in different formats (this is normal!)
 
 ## Documentation
 

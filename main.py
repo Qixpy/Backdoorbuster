@@ -1387,22 +1387,108 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
             
             app = Flask(__name__, template_folder='templates')
             
+            def load_latest_scan_data():
+                """Load the latest scan data from JSON files"""
+                try:
+                    if not self.logs_dir.exists():
+                        return [], [], [], []
+                    
+                    json_files = list(self.logs_dir.glob('scan_*.json'))
+                    if not json_files:
+                        return [], [], [], []
+                    
+                    # Get the latest scan file
+                    latest_file = max(json_files, key=lambda x: x.stat().st_mtime)
+                    
+                    with open(latest_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # Convert scan data to template format
+                    threats = []
+                    for threat in data.get('threats_found', []):
+                        score = 75  # Default HIGH score for threats found
+                        if threat.get('severity') == 'low':
+                            score = 25
+                        elif threat.get('severity') == 'medium':
+                            score = 50
+                        elif threat.get('severity') == 'high':
+                            score = 80
+                        elif threat.get('severity') == 'critical':
+                            score = 95
+                        
+                        threats.append({
+                            'path': threat.get('file', 'Unknown'),
+                            'type': threat.get('threat_type', 'Unknown'),
+                            'score': score,
+                            'behavior': threat.get('description', 'No description'),
+                            'timestamp': threat.get('timestamp', data.get('scan_info', {}).get('timestamp', 'Unknown'))
+                        })
+                    
+                    # Add file scan results as potential threats
+                    for file_info in data.get('files_scanned', []):
+                        if file_info.get('status') == 'suspicious':
+                            threats.append({
+                                'path': file_info.get('path', 'Unknown'),
+                                'type': 'Suspicious File',
+                                'score': 45,  # Medium threat score
+                                'behavior': f"File extension: {file_info.get('extension', 'unknown')} - {file_info.get('reason', 'No reason')}",
+                                'timestamp': data.get('scan_info', {}).get('timestamp', 'Unknown')
+                            })
+                    
+                    # Create dummy mitigation data
+                    mitigations = []
+                    for threat in threats[:3]:  # First 3 threats get mitigations
+                        mitigations.append({
+                            'target': threat['path'],
+                            'action': 'Quarantine',
+                            'status': 'Pending',
+                            'timestamp': threat['timestamp']
+                        })
+                    
+                    # Create dummy forensics data
+                    forensics = []
+                    if data.get('files_scanned'):
+                        forensics.append({
+                            'process_name': 'BackdoorBuster Scanner',
+                            'pid': '1234',
+                            'memory_data': f"Scanned {len(data['files_scanned'])} files",
+                            'timestamp': data.get('scan_info', {}).get('timestamp', 'Unknown')
+                        })
+                    
+                    log_files = [f.name for f in json_files]
+                    
+                    return threats, mitigations, forensics, log_files
+                    
+                except Exception as e:
+                    print(f"❌ Error loading scan data: {e}")
+                    return [], [], [], []
+            
             @app.route('/')
             def index():
-                # Get list of log files from the logs directory
-                log_files = []
-                if self.logs_dir.exists():
-                    log_files = [f.name for f in self.logs_dir.glob('*.json')]
+                threats, mitigations, forensics, log_files = load_latest_scan_data()
                 
                 return render_template('log.html', 
                                      log_files=log_files,
-                                     threats=[],
-                                     mitigations=[],
-                                     forensics=[])
+                                     threats=threats,
+                                     mitigations=mitigations,
+                                     forensics=forensics,
+                                     generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            
+            @app.route('/api/scan-data')
+            def api_scan_data():
+                """API endpoint to get scan data as JSON"""
+                threats, mitigations, forensics, log_files = load_latest_scan_data()
+                return jsonify({
+                    'threats': threats,
+                    'mitigations': mitigations,
+                    'forensics': forensics,
+                    'log_files': log_files
+                })
             
             # Start server
             url = f"http://{host}:{port}"
             print(f"🌐 Web server starting at {url}")
+            print(f"📊 Loading scan data from: {self.logs_dir}")
             webbrowser.open(url)
             app.run(host=host, port=port, debug=False)
             
