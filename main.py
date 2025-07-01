@@ -1529,6 +1529,7 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
 
 if __name__ == "__main__":
     import argparse
+    import os
     
     parser = argparse.ArgumentParser(description='BackdoorBuster - Advanced Malware Detection Tool')
     parser.add_argument('--version', action='version', version='BackdoorBuster v1.0 - Created by Shieldpy (https://shieldpy.com)')
@@ -1536,7 +1537,7 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=5000, help='Web server port (default: 5000)')
     parser.add_argument('--host', default='127.0.0.1', help='Web server host (default: 127.0.0.1)')
     parser.add_argument('--no-banner', action='store_true', help='Skip banner display')
-    parser.add_argument('--scan', help='Scan a specific directory')
+    parser.add_argument('--scan', nargs='+', help='Directory or files to scan (supports multiple paths)')
     parser.add_argument('--logs', action='store_true', help='List available log files')
     parser.add_argument('--view-log', help='View a specific log file')
     
@@ -1551,7 +1552,15 @@ if __name__ == "__main__":
         print("Press Ctrl+C to stop the server")
         app.start_web_server(host=args.host, port=args.port)
     elif args.scan:
-        app.scan_directory(args.scan)
+        print(f"🔍 Starting scan of {len(args.scan)} path(s)...")
+        for path in args.scan:
+            expanded_path = os.path.expanduser(path)
+            if os.path.exists(expanded_path):
+                print(f"🔍 Scanning: {expanded_path}")
+                app.scan_directory(expanded_path)
+            else:
+                print(f"❌ Directory not found: {expanded_path}")
+        print("✅ All scans completed!")
     elif args.logs:
         app.list_logs()
     elif args.view_log:

@@ -108,8 +108,14 @@ python main.py
 # Show version
 python main.py --version
 
-# Scan a directory
+# Scan a single directory
 python main.py --scan /path/to/directory
+
+# Scan multiple directories (NEW!)
+python main.py --scan /etc /usr/bin /bin /var/log /tmp
+
+# Scan with home directory expansion
+python main.py --scan ~/.config ~/.ssh ~/.local/bin
 
 # Start web interface
 python main.py --web-server
