@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BackdoorBuster Security Report</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .main-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-right: 2px solid #333;
+            padding: 20px;
+            padding-top: 60px;
+            /* Add space for the toggle button */
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-280px);
+        }
+
+        .sidebar-header {
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            color: #00d4ff;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: transparent;
+            border: 1px solid #555;
+            color: #00d4ff;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            transform: scale(1.05);
+        }
+
+        .sidebar-toggle.collapsed {
+            left: 15px;
+        }
+
+        .hamburger {
+            width: 20px;
+            height: 15px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            display: block;
+            position: absolute;
+            height: 2px;
+            width: 100%;
+            background: #00d4ff;
+            border-radius: 1px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+
+        .hamburger span:nth-child(1) {
+            top: 0px;
+        }
+
+        .hamburger span:nth-child(2),
+        .hamburger span:nth-child(3) {
+            top: 6px;
+        }
+
+        .hamburger span:nth-child(4) {
+            top: 12px;
+        }
+
+        .hamburger.open span:nth-child(1) {
+            top: 6px;
+            width: 0%;
+            left: 50%;
+        }
+
+        .hamburger.open span:nth-child(2) {
+            transform: rotate(45deg);
+        }
+
+        .hamburger.open span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
+
+        .hamburger.open span:nth-child(4) {
+            top: 6px;
+            width: 0%;
+            left: 50%;
+        }
+
+        .file-tree {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-tree-item {
+            margin: 5px 0;
+        }
+
+        .file-tree-folder {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 5px;
+        }
+
+        .file-tree-folder:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .file-tree-folder.expanded {
+            background: rgba(0, 212, 255, 0.15);
+        }
+
+        .file-tree-file {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px 6px 30px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .file-tree-file:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .file-tree-file.active {
+            background: #00d4ff;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .file-icon {
+            font-size: 14px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .file-meta {
+            display: block;
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .content-area {
+            margin-left: 280px;
+            flex: 1;
+            transition: margin-left 0.3s ease;
+        }
+
+        .content-area.expanded {
+            margin-left: 0;
+        }
+
+        .container {
+            max-width: none;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
+        }
+
+        .header h1 {
+            color: #00d4ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .header .subtitle {
+            color: #b0b0b0;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .header .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            background: #1a1a1a;
+            border: 2px solid #444;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            min-width: 100px;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #b0b0b0;
+        }
+
+        .section {
+            background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
+        }
+
+        .section h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #333;
+            color: #00d4ff;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #444;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .threat-critical {
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        .threat-high {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .threat-medium {
+            color: #ffa726;
+            background: rgba(255, 167, 38, 0.1);
+        }
+
+        .threat-low {
+            color: #66bb6a;
+            background: rgba(102, 187, 106, 0.1);
+        }
+
+        .status-success {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .status-failed {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            color: #ff9800;
+            font-weight: 600;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .score-critical {
+            background: #ff4757;
+            color: white;
+        }
+
+        .score-high {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .score-medium {
+            background: #ffa726;
+            color: white;
+        }
+
+        .score-low {
+            background: #66bb6a;
+            color: white;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .path-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .behavior-cell {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .filter-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px 20px;
+            color: #666;
+            border-top: 1px solid #333;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .footer .brand-info {
+            margin-bottom: 15px;
+        }
+
+        .footer .brand-link {
+            color: #00d4ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+        }
+
+        .footer .brand-link:hover {
+            color: #ffffff;
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+        }
+
+        .footer .github-link {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 15px;
+        }
+
+        .footer .github-link:hover {
+            color: #00d4ff;
+        }
+
+        .footer .stats-info {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                transform: translateX(-100%);
+                padding-top: 60px;
+                /* Maintain space for toggle button on mobile */
+            }
+
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-toggle {
+                top: 15px;
+                left: 15px;
+            }
+
+            .content-area {
+                margin-left: 0;
+            }
+
+            .container {
+                padding: 10px;
+                padding-top: 60px;
+                /* Add space for toggle button on mobile */
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .stats {
+                justify-content: center;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .path-cell {
+                max-width: 200px;
+            }
+
+            .behavior-cell {
+                max-width: 250px;
+            }
+        }
+
+        .search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 999;
+        }
+
+        .search-overlay.active {
+            display: block;
+        }
+
+        .file-search {
+            margin-bottom: 15px;
+        }
+
+        .file-search input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 12px;
+        }
+
+        .file-search input:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .file-count {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="search-overlay" id="searchOverlay" onclick="toggleSidebar()"></div>
+
+    <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">
+        <div class="hamburger" id="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+
+    <div class="main-layout">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    📁 Report Archive
+                </div>
+                <div class="file-search">
+                    <input type="text" placeholder="Search reports..." onkeyup="filterFileTree()" id="fileSearch">
+                </div>
+                <div class="file-count" id="fileCount">Loading reports...</div>
+            </div>
+
+            <ul class="file-tree" id="fileTree">
+                <!-- File tree will be populated by JavaScript -->
+            </ul>
+        </div>
+
+        <div class="content-area" id="contentArea">
+            <div class="container">
+                <div class="header">
+                    <h1>🛡️ BackdoorBuster Security Report</h1>
+                    <p class="subtitle">Comprehensive Malware Detection & Analysis Report</p>
+                    <div class="meta">
+                        <div class="search-container">
+                            <input type="text" class="search-bar" placeholder="Search threats, paths, actions..."
+                                onkeyup="filterTables()" id="globalSearch">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-number" style="color: #ff4757;">{{ threats|length }}</div>
+                                <div class="stat-label">Threats</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" style="color: #00d4ff;">{{ mitigations|length }}</div>
+                                <div class="stat-label">Mitigations</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number" style="color: #ffa726;">{{ forensics|length }}</div>
+                                <div class="stat-label">Forensics</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 15px; color: #888;">Generated: {{ generated_at }}</p>
+                </div>
+
+                <div class="section">
+                    <h2>🚨 Threats Detected</h2>
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <span class="filter-label">Filter by Score:</span>
+                            <select class="filter-select" onchange="filterByScore()" id="scoreFilter">
+                                <option value="all">All Threats</option>
+                                <option value="critical">Critical (80+)</option>
+                                <option value="high">High (50-79)</option>
+                                <option value="medium">Medium (20-49)</option>
+                                <option value="low">Low (0-19)</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Filter by Type:</span>
+                            <select class="filter-select" onchange="filterByType()" id="typeFilter">
+                                <option value="all">All Types</option>
+                                <option value="yara">YARA Detection</option>
+                                <option value="entropy">High Entropy</option>
+                                <option value="clean">Clean</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="threatsTable">
+                            <thead>
+                                <tr>
+                                    <th>Path</th>
+                                    <th>Type</th>
+                                    <th>Score</th>
+                                    <th>Behavior</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for threat in threats %}
+                                <tr class="threat-row {% if threat.score >= 80 %}threat-critical{% elif threat.score >= 50 %}threat-high{% elif threat.score >= 20 %}threat-medium{% else %}threat-low{% endif %}"
+                                    data-score="{{ threat.score }}" data-type="{{ threat.type }}">
+                                    <td class="path-cell" title="{{ threat.path }}">{{ threat.path }}</td>
+                                    <td>{{ threat.type }}</td>
+                                    <td>
+                                        <span
+                                            class="score-badge {% if threat.score >= 80 %}score-critical{% elif threat.score >= 50 %}score-high{% elif threat.score >= 20 %}score-medium{% else %}score-low{% endif %}">
+                                            {{ threat.score }}
+                                        </span>
+                                    </td>
+                                    <td class="behavior-cell" title="{{ threat.behavior }}">{{ threat.behavior }}</td>
+                                    <td class="timestamp">{{ threat.timestamp }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not threats %}
+                                <tr>
+                                    <td colspan="5" class="no-results">No threats detected</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🛡️ Mitigations Applied</h2>
+                    <div class="table-container">
+                        <table id="mitigationsTable">
+                            <thead>
+                                <tr>
+                                    <th>Target</th>
+                                    <th>Action</th>
+                                    <th>Status</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mitigation in mitigations %}
+                                <tr>
+                                    <td class="path-cell" title="{{ mitigation.target }}">{{ mitigation.target }}</td>
+                                    <td>{{ mitigation.action }}</td>
+                                    <td
+                                        class="{% if mitigation.status == 'Success' %}status-success{% elif 'Failed' in mitigation.status %}status-failed{% else %}status-pending{% endif %}">
+                                        {{ mitigation.status }}
+                                    </td>
+                                    <td class="timestamp">{{ mitigation.timestamp }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not mitigations %}
+                                <tr>
+                                    <td colspan="4" class="no-results">No mitigations applied</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🧠 Forensics Data</h2>
+                    <div class="table-container">
+                        <table id="forensicsTable">
+                            <thead>
+                                <tr>
+                                    <th>Process</th>
+                                    <th>PID</th>
+                                    <th>Analysis Data</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in forensics %}
+                                <tr>
+                                    <td>{{ record.process_name or 'Unknown' }}</td>
+                                    <td>{{ record.pid or 'N/A' }}</td>
+                                    <td class="behavior-cell" title="{{ record.memory_data }}">{{ record.memory_data }}
+                                    </td>
+                                    <td class="timestamp">{{ record.timestamp }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not forensics %}
+                                <tr>
+                                    <td colspan="4" class="no-results">No forensics data available</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <div class="brand-info">
+                        <p>BackdoorBuster v1.0 - Elite Malware Detection System</p>
+                        <p>Created by <a href="https://shieldpy.com" target="_blank" class="brand-link">🛡️ Shieldpy</a>
+                        <a href="https://github.com/Qixpy" target="_blank" class="github-link">⭐ GitHub</a></p>
+                    </div>
+                    <div class="stats-info">
+                        <p>Report contains {{ threats|length }} threats, {{ mitigations|length }} mitigations, and {{
+                            forensics|length }} forensic records</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template data injection -->
+    <script type="application/json" id="template-data">
+        {
+            "logFiles": {{ log_files|default([])|tojson|safe }},
+            "currentLogData": {
+                "threats": {{ threats|default([])|tojson|safe }},
+                "mitigations": {{ mitigations|default([])|tojson|safe }},
+                "forensics": {{ forensics|default([])|tojson|safe }}
+            },
+            "currentLogFile": "{{ current_log_file|default('') }}"
+        }
+    </script>
+
+    <script>
+        // Initialize variables
+        let logFiles = [];
+        let sidebarOpen = true;
+        let currentLogData = {
+            threats: [],
+            mitigations: [],
+            forensics: []
+        };
+        let currentLogFile = "";
+
+        // Load data from template
+        try {
+            const templateData = JSON.parse(document.getElementById('template-data').textContent);
+            logFiles = templateData.logFiles || [];
+            currentLogData = templateData.currentLogData || { threats: [], mitigations: [], forensics: [] };
+            currentLogFile = templateData.currentLogFile || "";
+        } catch (e) {
+            console.warn("Error parsing template data:", e);
+            // Use fallback sample data for development
+            logFiles = generateSampleLogFiles();
+            currentLogData = generateSampleData();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const contentArea = document.getElementById('contentArea');
+            const overlay = document.getElementById('searchOverlay');
+            const hamburger = document.getElementById('hamburger');
+
+            if (window.innerWidth <= 768) {
+                // Mobile behavior
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('active');
+                // Show X when sidebar is open, hamburger when closed
+                hamburger.classList.toggle('open', sidebar.classList.contains('mobile-open'));
+            } else {
+                // Desktop behavior
+                sidebar.classList.toggle('collapsed');
+                contentArea.classList.toggle('expanded');
+                sidebarOpen = !sidebar.classList.contains('collapsed');
+                // Show X when sidebar is open, hamburger when closed
+                hamburger.classList.toggle('open', sidebarOpen);
+            }
+        }
+
+        function populateFileTree() {
+            const fileTree = document.getElementById('fileTree');
+            const fileCount = document.getElementById('fileCount');
+
+            fileTree.innerHTML = '';
+
+            // Sort log files by date/time (newest first)
+            const sortedFiles = logFiles.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
+
+            sortedFiles.forEach(file => {
+                const fileItem = document.createElement('li');
+                fileItem.className = 'file-tree-item';
+
+                const fileElement = document.createElement('div');
+                fileElement.className = `file-tree-file ${file.filename === currentLogFile ? 'active' : ''}`;
+                fileElement.innerHTML = `
+                    <span class="file-icon">${getFileIcon(file.threat_count)}</span>
+                    <div>
+                        <div title="${file.filename}">${file.filename}</div>
+                        <span class="file-meta">${file.date_time} • ${file.size} • ${file.threat_count} threats</span>
+                    </div>
+                `;
+
+                fileElement.onclick = () => loadReport(file);
+
+                fileItem.appendChild(fileElement);
+                fileTree.appendChild(fileItem);
+            });
+
+            fileCount.textContent = `${logFiles.length} reports available`;
+        }
+
+        function getFileIcon(threatCount) {
+            if (threatCount > 50) return '🚨';
+            if (threatCount > 20) return '⚠️';
+            if (threatCount > 0) return '📋';
+            return '✅';
+        }
+
+        function loadReport(file) {
+            // Remove active class from all files
+            document.querySelectorAll('.file-tree-file').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Add active class to clicked file
+            event.target.closest('.file-tree-file').classList.add('active');
+
+            // If this is the current log file, no need to reload
+            if (file.filename === currentLogFile) {
+                return;
+            }
+
+            // In a real implementation, this would make an AJAX request to load the report data
+            // For now, we'll simulate loading and show the data that's available
+
+            // Show loading state
+            showLoadingState();
+
+            // Simulate network delay
+            setTimeout(() => {
+                // Update current log file
+                currentLogFile = file.filename;
+
+                // Update the header info
+                updateReportHeader(file);
+
+                // For demo purposes, we'll load sample data based on the file
+                // In a real implementation, this would come from the server
+                loadReportData(file);
+
+                hideLoadingState();
+            }, 500);
+        }
+
+        function showLoadingState() {
+            // Add loading class to tables
+            document.querySelectorAll('table tbody').forEach(tbody => {
+                tbody.innerHTML = '<tr><td colspan="100%" class="no-results">🔄 Loading report data...</td></tr>';
+            });
+        }
+
+        function hideLoadingState() {
+            // Remove loading states - actual data will be populated by loadReportData
+        }
+
+        function updateReportHeader(file) {
+            // Update the generated timestamp
+            const generatedElement = document.querySelector('.header p:last-child');
+            if (generatedElement) {
+                generatedElement.textContent = `Generated: ${file.date_time}`;
+            }
+        }
+
+        function loadReportData(file) {
+            // This would normally fetch data from the server
+            // For now, we'll generate sample data based on the file's threat count
+
+            const threats = generateSampleThreats(file.threat_count);
+            const mitigations = generateSampleMitigations(file.threat_count);
+            const forensics = generateSampleForensics(file.threat_count);
+
+            // Update the stats
+            updateStats(threats.length, mitigations.length, forensics.length);
+
+            // Populate the tables
+            populateThreatsTable(threats);
+            populateMitigationsTable(mitigations);
+            populateForensicsTable(forensics);
+        }
+
+        function updateStats(threatCount, mitigationCount, forensicCount) {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            if (statNumbers.length >= 3) {
+                statNumbers[0].textContent = threatCount;
+                statNumbers[1].textContent = mitigationCount;
+                statNumbers[2].textContent = forensicCount;
+            }
+        }
+
+        function populateThreatsTable(threats) {
+            const tbody = document.querySelector('#threatsTable tbody');
+            if (!tbody) return;
+
+            if (threats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-results">No threats detected</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = threats.map(threat => `
+                <tr class="threat-row ${getThreatClass(threat.score)}" data-score="${threat.score}" data-type="${threat.type}">
+                    <td class="path-cell" title="${threat.path}">${threat.path}</td>
+                    <td>${threat.type}</td>
+                    <td>
+                        <span class="score-badge ${getScoreClass(threat.score)}">
+                            ${threat.score}
+                        </span>
+                    </td>
+                    <td class="behavior-cell" title="${threat.behavior}">${threat.behavior}</td>
+                    <td class="timestamp">${threat.timestamp}</td>
+                </tr>
+            `).join('');
+        }
+
+        function populateMitigationsTable(mitigations) {
+            const tbody = document.querySelector('#mitigationsTable tbody');
+            if (!tbody) return;
+
+            if (mitigations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="no-results">No mitigations applied</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = mitigations.map(mitigation => `
+                <tr>
+                    <td class="path-cell" title="${mitigation.target}">${mitigation.target}</td>
+                    <td>${mitigation.action}</td>
+                    <td class="${getStatusClass(mitigation.status)}">${mitigation.status}</td>
+                    <td class="timestamp">${mitigation.timestamp}</td>
+                </tr>
+            `).join('');
+        }
+
+        function populateForensicsTable(forensics) {
+            const tbody = document.querySelector('#forensicsTable tbody');
+            if (!tbody) return;
+
+            if (forensics.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="no-results">No forensics data available</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = forensics.map(record => `
+                <tr>
+                    <td>${record.process_name || 'Unknown'}</td>
+                    <td>${record.pid || 'N/A'}</td>
+                    <td class="behavior-cell" title="${record.memory_data}">${record.memory_data}</td>
+                    <td class="timestamp">${record.timestamp}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getThreatClass(score) {
+            if (score >= 80) return 'threat-critical';
+            if (score >= 50) return 'threat-high';
+            if (score >= 20) return 'threat-medium';
+            return 'threat-low';
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return 'score-critical';
+            if (score >= 50) return 'score-high';
+            if (score >= 20) return 'score-medium';
+            return 'score-low';
+        }
+
+        function getStatusClass(status) {
+            if (status === 'Success') return 'status-success';
+            if (status.includes('Failed')) return 'status-failed';
+            return 'status-pending';
+        }
+
+        function generateSampleThreats(count) {
+            const threats = [];
+            const types = ['YARA Detection', 'High Entropy', 'Suspicious Behavior', 'Network Activity'];
+            const paths = [
+                'C:\\Windows\\System32\\malware.exe',
+                'C:\\Users\\Admin\\Downloads\\suspicious.dll',
+                'C:\\Temp\\backdoor.bat',
+                'C:\\ProgramData\\hidden\\trojan.exe',
+                'C:\\Windows\\Temp\\payload.bin'
+            ];
+            const behaviors = [
+                'Registry modification detected',
+                'Network connection to suspicious IP',
+                'File encryption activity',
+                'Process injection detected',
+                'Keylogger behavior identified'
+            ];
+
+            for (let i = 0; i < count && i < 50; i++) {
+                threats.push({
+                    path: paths[i % paths.length],
+                    type: types[i % types.length],
+                    score: Math.floor(Math.random() * 100),
+                    behavior: behaviors[i % behaviors.length],
+                    timestamp: new Date(Date.now() - i * 60000).toLocaleString()
+                });
+            }
+
+            return threats;
+        }
+
+        function generateSampleMitigations(threatCount) {
+            const mitigations = [];
+            const actions = ['Quarantine', 'Delete', 'Block Network', 'Terminate Process', 'Isolate'];
+            const statuses = ['Success', 'Failed - Access Denied', 'Pending', 'Success'];
+
+            const count = Math.min(threatCount, Math.floor(threatCount * 0.8)); // 80% mitigation rate
+
+            for (let i = 0; i < count; i++) {
+                mitigations.push({
+                    target: `Threat ${i + 1}`,
+                    action: actions[i % actions.length],
+                    status: statuses[i % statuses.length],
+                    timestamp: new Date(Date.now() - i * 45000).toLocaleString()
+                });
+            }
+
+            return mitigations;
+        }
+
+        function generateSampleForensics(threatCount) {
+            const forensics = [];
+            const processes = ['svchost.exe', 'explorer.exe', 'chrome.exe', 'notepad.exe', 'cmd.exe'];
+            const memoryData = [
+                'Heap analysis shows suspicious allocations',
+                'Process memory contains encrypted payloads',
+                'DLL injection patterns detected',
+                'Code cave utilization identified',
+                'Memory scan reveals hidden processes'
+            ];
+
+            const count = Math.min(threatCount, Math.floor(threatCount * 0.6)); // 60% forensics coverage
+
+            for (let i = 0; i < count; i++) {
+                forensics.push({
+                    process_name: processes[i % processes.length],
+                    pid: 1000 + Math.floor(Math.random() * 9000),
+                    memory_data: memoryData[i % memoryData.length],
+                    timestamp: new Date(Date.now() - i * 30000).toLocaleString()
+                });
+            }
+
+            return forensics;
+        }
+
+        // Add fallback sample data generators for development
+        function generateSampleLogFiles() {
+            /** Generate sample log files for development/testing */
+            return [
+                {
+                    'filename': 'scan_2024-06-30_14-30-00.html',
+                    'size': '156 KB',
+                    'threat_count': 5,
+                    'date_time': '2024-06-30 14:30:00',
+                    'timestamp': 1719755400
+                },
+                {
+                    'filename': 'scan_2024-06-30_12-15-30.html',
+                    'size': '89 KB',
+                    'threat_count': 2,
+                    'date_time': '2024-06-30 12:15:30',
+                    'timestamp': 1719747330
+                },
+                {
+                    'filename': 'scan_2024-06-29_16-45-15.html',
+                    'size': '203 KB',
+                    'threat_count': 12,
+                    'date_time': '2024-06-29 16:45:15',
+                    'timestamp': 1719677115
+                }
+            ];
+        }
+
+        function generateSampleData() {
+            /** Generate sample threat data for development/testing */
+            return {
+                'threats': [
+                    {
+                        'path': 'C:\\Windows\\System32\\malware.exe',
+                        'type': 'YARA Detection',
+                        'score': 85,
+                        'behavior': 'Registry modification detected',
+                        'timestamp': '2024-06-30 14:30:15'
+                    },
+                    {
+                        'path': 'C:\\Users\\Admin\\Downloads\\suspicious.dll',
+                        'type': 'High Entropy',
+                        'score': 62,
+                        'behavior': 'Network connection to suspicious IP',
+                        'timestamp': '2024-06-30 14:31:22'
+                    }
+                ],
+                'mitigations': [
+                    {
+                        'target': 'C:\\Windows\\System32\\malware.exe',
+                        'action': 'Quarantine',
+                        'status': 'Success',
+                        'timestamp': '2024-06-30 14:32:05'
+                    }
+                ],
+                'forensics': [
+                    {
+                        'process_name': 'svchost.exe',
+                        'pid': 1234,
+                        'memory_data': 'Heap analysis shows suspicious allocations',
+                        'timestamp': '2024-06-30 14:33:10'
+                    }
+                ]
+            };
+        }
+
+        logFiles = generateSampleLogFiles();
+        currentLogData = generateSampleData();
+
+        function filterFileTree() {
+            const searchTerm = document.getElementById('fileSearch').value.toLowerCase();
+            const fileElements = document.querySelectorAll('.file-tree-file');
+            let visibleCount = 0;
+
+            fileElements.forEach(element => {
+                const fileName = element.textContent.toLowerCase();
+                const isVisible = fileName.includes(searchTerm);
+                element.parentElement.style.display = isVisible ? 'block' : 'none';
+
+                if (isVisible) visibleCount++;
+            });
+
+            document.getElementById('fileCount').textContent =
+                searchTerm ? `${visibleCount} reports found` : `${fileElements.length} reports available`;
+        }
+
+        // Original functions for table filtering
+        function filterTables() {
+            const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+            const tables = ['threatsTable', 'mitigationsTable', 'forensicsTable'];
+
+            tables.forEach(tableId => {
+                const table = document.getElementById(tableId);
+                if (!table) return;
+
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    const cells = row.getElementsByTagName('td');
+                    let found = false;
+
+                    for (let j = 0; j < cells.length; j++) {
+                        if (cells[j].textContent.toLowerCase().includes(searchTerm)) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    row.style.display = found ? '' : 'none';
+                }
+            });
+        }
+
+        function filterByScore() {
+            const scoreFilter = document.getElementById('scoreFilter').value;
+            const rows = document.querySelectorAll('.threat-row');
+
+            rows.forEach(row => {
+                const score = parseInt(row.dataset.score);
+                let show = true;
+
+                switch (scoreFilter) {
+                    case 'critical':
+                        show = score >= 80;
+                        break;
+                    case 'high':
+                        show = score >= 50 && score < 80;
+                        break;
+                    case 'medium':
+                        show = score >= 20 && score < 50;
+                        break;
+                    case 'low':
+                        show = score < 20;
+                        break;
+                    default:
+                        show = true;
+                }
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function filterByType() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const rows = document.querySelectorAll('.threat-row');
+
+            rows.forEach(row => {
+                const type = row.dataset.type.toLowerCase();
+                let show = true;
+
+                if (typeFilter !== 'all') {
+                    show = type.includes(typeFilter);
+                }
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        // Initialize tooltips and file tree
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize file tree
+            populateFileTree();
+
+            // Initialize tooltips
+            const cells = document.querySelectorAll('.path-cell, .behavior-cell');
+            cells.forEach(cell => {
+                if (cell.scrollWidth > cell.clientWidth) {
+                    cell.style.cursor = 'pointer';
+                    cell.addEventListener('click', function () {
+                        alert(this.textContent);
+                    });
+                }
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('searchOverlay');
+                    const hamburger = document.getElementById('hamburger');
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                    // Show X when sidebar is open, hamburger when closed
+                    hamburger.classList.toggle('open', sidebarOpen);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
