@@ -872,9 +872,9 @@
             currentLogFile = templateData.currentLogFile || "";
         } catch (e) {
             console.warn("Error parsing template data:", e);
-            // Use fallback sample data for development
-            logFiles = generateSampleLogFiles();
-            currentLogData = generateSampleData();
+            // Initialize with empty data if template data fails to load
+            logFiles = [];
+            currentLogData = { threats: [], mitigations: [], forensics: [] };
         }
 
         function toggleSidebar() {
@@ -1100,150 +1100,6 @@
             if (status.includes('Failed')) return 'status-failed';
             return 'status-pending';
         }
-
-        function generateSampleThreats(count) {
-            const threats = [];
-            const types = ['YARA Detection', 'High Entropy', 'Suspicious Behavior', 'Network Activity'];
-            const paths = [
-                'C:\\Windows\\System32\\malware.exe',
-                'C:\\Users\\Admin\\Downloads\\suspicious.dll',
-                'C:\\Temp\\backdoor.bat',
-                'C:\\ProgramData\\hidden\\trojan.exe',
-                'C:\\Windows\\Temp\\payload.bin'
-            ];
-            const behaviors = [
-                'Registry modification detected',
-                'Network connection to suspicious IP',
-                'File encryption activity',
-                'Process injection detected',
-                'Keylogger behavior identified'
-            ];
-
-            for (let i = 0; i < count && i < 50; i++) {
-                threats.push({
-                    path: paths[i % paths.length],
-                    type: types[i % types.length],
-                    score: Math.floor(Math.random() * 100),
-                    behavior: behaviors[i % behaviors.length],
-                    timestamp: new Date(Date.now() - i * 60000).toLocaleString()
-                });
-            }
-
-            return threats;
-        }
-
-        function generateSampleMitigations(threatCount) {
-            const mitigations = [];
-            const actions = ['Quarantine', 'Delete', 'Block Network', 'Terminate Process', 'Isolate'];
-            const statuses = ['Success', 'Failed - Access Denied', 'Pending', 'Success'];
-
-            const count = Math.min(threatCount, Math.floor(threatCount * 0.8)); // 80% mitigation rate
-
-            for (let i = 0; i < count; i++) {
-                mitigations.push({
-                    target: `Threat ${i + 1}`,
-                    action: actions[i % actions.length],
-                    status: statuses[i % statuses.length],
-                    timestamp: new Date(Date.now() - i * 45000).toLocaleString()
-                });
-            }
-
-            return mitigations;
-        }
-
-        function generateSampleForensics(threatCount) {
-            const forensics = [];
-            const processes = ['svchost.exe', 'explorer.exe', 'chrome.exe', 'notepad.exe', 'cmd.exe'];
-            const memoryData = [
-                'Heap analysis shows suspicious allocations',
-                'Process memory contains encrypted payloads',
-                'DLL injection patterns detected',
-                'Code cave utilization identified',
-                'Memory scan reveals hidden processes'
-            ];
-
-            const count = Math.min(threatCount, Math.floor(threatCount * 0.6)); // 60% forensics coverage
-
-            for (let i = 0; i < count; i++) {
-                forensics.push({
-                    process_name: processes[i % processes.length],
-                    pid: 1000 + Math.floor(Math.random() * 9000),
-                    memory_data: memoryData[i % memoryData.length],
-                    timestamp: new Date(Date.now() - i * 30000).toLocaleString()
-                });
-            }
-
-            return forensics;
-        }
-
-        // Add fallback sample data generators for development
-        function generateSampleLogFiles() {
-            /** Generate sample log files for development/testing */
-            return [
-                {
-                    'filename': 'scan_2024-06-30_14-30-00.html',
-                    'size': '156 KB',
-                    'threat_count': 5,
-                    'date_time': '2024-06-30 14:30:00',
-                    'timestamp': 1719755400
-                },
-                {
-                    'filename': 'scan_2024-06-30_12-15-30.html',
-                    'size': '89 KB',
-                    'threat_count': 2,
-                    'date_time': '2024-06-30 12:15:30',
-                    'timestamp': 1719747330
-                },
-                {
-                    'filename': 'scan_2024-06-29_16-45-15.html',
-                    'size': '203 KB',
-                    'threat_count': 12,
-                    'date_time': '2024-06-29 16:45:15',
-                    'timestamp': 1719677115
-                }
-            ];
-        }
-
-        function generateSampleData() {
-            /** Generate sample threat data for development/testing */
-            return {
-                'threats': [
-                    {
-                        'path': 'C:\\Windows\\System32\\malware.exe',
-                        'type': 'YARA Detection',
-                        'score': 85,
-                        'behavior': 'Registry modification detected',
-                        'timestamp': '2024-06-30 14:30:15'
-                    },
-                    {
-                        'path': 'C:\\Users\\Admin\\Downloads\\suspicious.dll',
-                        'type': 'High Entropy',
-                        'score': 62,
-                        'behavior': 'Network connection to suspicious IP',
-                        'timestamp': '2024-06-30 14:31:22'
-                    }
-                ],
-                'mitigations': [
-                    {
-                        'target': 'C:\\Windows\\System32\\malware.exe',
-                        'action': 'Quarantine',
-                        'status': 'Success',
-                        'timestamp': '2024-06-30 14:32:05'
-                    }
-                ],
-                'forensics': [
-                    {
-                        'process_name': 'svchost.exe',
-                        'pid': 1234,
-                        'memory_data': 'Heap analysis shows suspicious allocations',
-                        'timestamp': '2024-06-30 14:33:10'
-                    }
-                ]
-            };
-        }
-
-        logFiles = generateSampleLogFiles();
-        currentLogData = generateSampleData();
 
         function filterFileTree() {
             const searchTerm = document.getElementById('fileSearch').value.toLowerCase();
