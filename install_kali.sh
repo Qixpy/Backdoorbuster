@@ -325,6 +325,16 @@ test_installation() {
 # Print completion message
 print_completion() {
     echo
+    echo -e "${CYAN}🔐 Running Privacy & Security Cleanup...${NC}"
+    if [ -f "privacy_cleanup.sh" ]; then
+        chmod +x privacy_cleanup.sh
+        ./privacy_cleanup.sh
+    else
+        echo "🧹 Cleaning up any existing scan data for privacy..."
+        rm -f logs/scan_*.json logs/scan_report_*.html 2>/dev/null || true
+        echo "✅ Privacy cleanup complete - your installation is private"
+    fi
+    echo
     echo -e "${GREEN}🎉 Kali Linux Installation Complete!${NC}"
     echo
     echo -e "${CYAN}To use BackdoorBuster:${NC}"

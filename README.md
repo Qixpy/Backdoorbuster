@@ -81,7 +81,37 @@ python3 main.py --version
 ```
 
 ---
-## Overview
+## 🔐 Privacy & Security
+
+**BackdoorBuster respects your privacy:**
+- ✅ **No data sharing**: Scan results stay on your local system only
+- ✅ **Private logs**: Each installation has its own private scan data
+- ✅ **No telemetry**: No data is sent to external servers
+- ✅ **Clean installs**: New installations don't contain previous scan data
+
+### **Privacy Cleanup**
+
+If you want to remove all existing scan data:
+
+**Linux/macOS:**
+```bash
+chmod +x privacy_cleanup.sh && ./privacy_cleanup.sh
+```
+
+**Windows:**
+```cmd
+privacy_cleanup.bat
+```
+
+**What gets cleaned:**
+- All scan results (JSON and HTML files)
+- Temporary files and caches
+- Database files with scan data
+- Accidentally committed config files
+
+**Note:** Your installation becomes completely private with no trace of previous scans.
+
+---
 
 BackdoorBuster is a comprehensive malware detection and analysis tool designed for cybersecurity professionals. It provides both command-line and web-based interfaces for scanning, analyzing, and managing potential security threats across multiple platforms.
 

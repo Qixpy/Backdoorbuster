@@ -148,6 +148,34 @@ class BackdoorBuster:
         
         self.db_connection = None
         self.config = {}
+        
+        # Privacy check on startup
+        self.check_privacy()
+    
+    def check_privacy(self):
+        """Check for existing scan data and warn about privacy"""
+        try:
+            if self.logs_dir.exists():
+                scan_files = list(self.logs_dir.glob('scan_*.json'))
+                if scan_files:
+                    # Check if scan files are old (more than 7 days)
+                    import time
+                    current_time = time.time()
+                    old_files = []
+                    
+                    for scan_file in scan_files:
+                        file_age = current_time - scan_file.stat().st_mtime
+                        if file_age > (7 * 24 * 60 * 60):  # 7 days in seconds
+                            old_files.append(scan_file)
+                    
+                    if old_files:
+                        print("🔐 Privacy Notice:")
+                        print(f"   Found {len(old_files)} old scan files (>7 days)")
+                        print("   These may contain sensitive system information")
+                        print("   To remove them: privacy_cleanup.sh (Linux) or privacy_cleanup.bat (Windows)")
+                        print()
+        except Exception:
+            pass  # Don't let privacy check break the app
         self.cipher_suite = None
         self.yara_rules = None
         self.monitoring = False
