@@ -11,6 +11,18 @@ GitHub: https://github.com/Qixpy
 
 import os
 import sys
+
+# Fix Unicode encoding issues on Windows
+if sys.platform == "win32":
+    import codecs
+    try:
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+    except Exception:
+        pass  # Fallback gracefully if encoding fix fails
+    # Set environment variable for proper encoding
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 import json
 import time
 import threading
@@ -1450,25 +1462,25 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                 print("💡 Make sure templates/log.html exists")
                 return
             
-            print(f"✅ Using template directory: {template_dir}")
+            print(f"[✓] Using template directory: {template_dir}")
             app = Flask(__name__, template_folder=str(template_dir))
             
             def load_latest_scan_data():
                 """Load the latest scan data from JSON files"""
                 try:
                     if not self.logs_dir.exists():
-                        print(f"📁 Creating logs directory: {self.logs_dir}")
+                        print("[INFO] Creating logs directory: {}".format(self.logs_dir))
                         self.logs_dir.mkdir(parents=True, exist_ok=True)
                         return [], [], [], []
                     
                     json_files = list(self.logs_dir.glob('scan_*.json'))
                     if not json_files:
-                        print("📄 No scan files found. Run a scan first with --scan")
+                        print("[INFO] No scan files found. Run a scan first with --scan")
                         return [], [], [], []
                     
                     # Get the latest scan file
                     latest_file = max(json_files, key=lambda x: x.stat().st_mtime)
-                    print(f"📊 Loading scan data from: {latest_file}")
+                    print("[INFO] Loading scan data from: {}".format(latest_file))
                     
                     with open(latest_file, 'r', encoding='utf-8') as f:
                         data = json.load(f)
@@ -1545,13 +1557,62 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                             'timestamp': base_timestamp
                         })
                     
-                    log_files = [f.name for f in json_files]
+                    # Create proper log file metadata
+                    log_files = []
+                    for f in json_files:
+                        try:
+                            stat = f.stat()
+                            # Format file size
+                            size_bytes = stat.st_size
+                            if size_bytes < 1024:
+                                size_str = f"{size_bytes} B"
+                            elif size_bytes < 1024 * 1024:
+                                size_str = f"{size_bytes / 1024:.1f} KB"
+                            else:
+                                size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
+                            
+                            # Format timestamp
+                            if DATETIME_AVAILABLE and datetime:
+                                mod_time = datetime.fromtimestamp(stat.st_mtime)
+                                date_time = mod_time.strftime("%Y-%m-%d %H:%M:%S")
+                            else:
+                                date_time = "Unknown"
+                            
+                            # Count threats in this file
+                            threat_count = 0
+                            try:
+                                with open(f, 'r', encoding='utf-8') as file:
+                                    file_data = json.load(file)
+                                    threat_count = len(file_data.get('threats_found', []))
+                            except:
+                                threat_count = 0
+                            
+                            log_files.append({
+                                'filename': f.name,
+                                'size': size_str,
+                                'date_time': date_time,
+                                'threat_count': threat_count,
+                                'timestamp': stat.st_mtime
+                            })
+                        except Exception as e:
+                            print(f"[WARNING] Could not process file {f.name}: {e}")
+                            # Add basic entry if processing fails
+                            log_files.append({
+                                'filename': f.name,
+                                'size': 'Unknown',
+                                'date_time': 'Unknown',
+                                'threat_count': 0,
+                                'timestamp': 0
+                            })
                     
-                    print(f"✅ Loaded {len(threats)} threats, {len(mitigations)} mitigations, {len(forensics)} forensics")
+                    # Sort by timestamp (newest first)
+                    log_files.sort(key=lambda x: x['timestamp'], reverse=True)
+                    
+                    print("[SUCCESS] Loaded {} threats, {} mitigations, {} forensics, {} log files".format(len(threats), len(mitigations), len(forensics), len(log_files)))
                     return threats, mitigations, forensics, log_files
                     
                 except Exception as e:
-                    print(f"❌ Error loading scan data: {e}")
+                    print("[ERROR] Error loading scan data: {}".format(e))
                     import traceback
                     traceback.print_exc()
                     return [], [], [], []
@@ -1567,7 +1628,12 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                     except Exception:
                         current_time = "Unknown"
                     
-                    print(f"🌐 Rendering web dashboard with {len(threats)} threats")
+                    print("[INFO] Rendering web dashboard with {} threats, {} mitigations, {} forensics".format(len(threats), len(mitigations), len(forensics)))
+                    print("[INFO] Log files available: {}".format(log_files))
+                    
+                    # Debug: Print first threat if available
+                    if threats:
+                        print("[DEBUG] First threat example: {}".format(threats[0]))
                     
                     return render_template('log.html', 
                                          log_files=log_files,
@@ -1577,7 +1643,7 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                                          generated_at=current_time)
                 
                 except Exception as e:
-                    print(f"❌ Error in index route: {e}")
+                    print("[ERROR] Error in index route: {}".format(e))
                     import traceback
                     traceback.print_exc()
                     
@@ -1615,14 +1681,14 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                 })
             
             # Start server
-            url = f"http://{host}:{port}"
-            print(f"🌐 Web server starting at {url}")
-            print(f"📊 Loading scan data from: {self.logs_dir}")
+            url = "http://{}:{}".format(host, port)
+            print("[WEB] Web server starting at {}".format(url))
+            print("[WEB] Loading scan data from: {}".format(self.logs_dir))
             webbrowser.open(url)
             app.run(host=host, port=port, debug=False)
             
         except Exception as e:
-            print(f"❌ Failed to start web server: {e}")
+            print(f"[X] Failed to start web server: {e}")
     
     def scan_directory(self, directory):
         """Scan a specific directory and create log files"""
@@ -1901,7 +1967,7 @@ if __name__ == "__main__":
         print("Press Ctrl+C to stop the server")
         app.start_web_server(host=args.host, port=args.port)
     elif args.scan:
-        print(f"🔍 Starting scan of {len(args.scan)} path(s)...")
+        print(f"[SCAN] Starting scan of {len(args.scan)} path(s)...")
         for path in args.scan:
             expanded_path = os.path.expanduser(path)
             if os.path.exists(expanded_path):

@@ -849,7 +849,10 @@
                 "mitigations": {{ mitigations|default([])|tojson|safe }},
                 "forensics": {{ forensics|default([])|tojson|safe }}
             },
-            "currentLogFile": "{{ current_log_file|default('') }}"
+            "currentLogFile": "{{ current_log_file|default('') }}",
+            "threats": {{ threats|default([])|tojson|safe }},
+            "mitigations": {{ mitigations|default([])|tojson|safe }},
+            "forensics": {{ forensics|default([])|tojson|safe }}
         }
     </script>
 
@@ -868,8 +871,23 @@
         try {
             const templateData = JSON.parse(document.getElementById('template-data').textContent);
             logFiles = templateData.logFiles || [];
-            currentLogData = templateData.currentLogData || { threats: [], mitigations: [], forensics: [] };
+            
+            // Support both nested and direct data structures
+            currentLogData = templateData.currentLogData || { 
+                threats: templateData.threats || [], 
+                mitigations: templateData.mitigations || [], 
+                forensics: templateData.forensics || [] 
+            };
+            
             currentLogFile = templateData.currentLogFile || "";
+            
+            // Debug: Log the loaded data to console
+            console.log("📊 Template data loaded:", templateData);
+            console.log("🔍 Threats:", currentLogData.threats);
+            console.log("🛡️ Mitigations:", currentLogData.mitigations);
+            console.log("🔬 Forensics:", currentLogData.forensics);
+            console.log("📋 Log files:", logFiles);
+            
         } catch (e) {
             console.warn("Error parsing template data:", e);
             // Initialize with empty data if template data fails to load
@@ -994,12 +1012,16 @@
         }
 
         function loadReportData(file) {
-            // This would normally fetch data from the server
-            // For now, we'll generate sample data based on the file's threat count
+            // Use the actual Flask data instead of generating sample data
+            const threats = currentLogData.threats || [];
+            const mitigations = currentLogData.mitigations || [];
+            const forensics = currentLogData.forensics || [];
 
-            const threats = generateSampleThreats(file.threat_count);
-            const mitigations = generateSampleMitigations(file.threat_count);
-            const forensics = generateSampleForensics(file.threat_count);
+            console.log('[DEBUG] Loading real report data:', {
+                threats: threats.length,
+                mitigations: mitigations.length,
+                forensics: forensics.length
+            });
 
             // Update the stats
             updateStats(threats.length, mitigations.length, forensics.length);
@@ -1195,6 +1217,20 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize file tree
             populateFileTree();
+            
+            // Initialize tables with current data
+            if (currentLogData) {
+                populateThreatsTable(currentLogData.threats || []);
+                populateMitigationsTable(currentLogData.mitigations || []);
+                populateForensicsTable(currentLogData.forensics || []);
+                
+                // Update stats
+                updateStats(
+                    (currentLogData.threats || []).length,
+                    (currentLogData.mitigations || []).length,
+                    (currentLogData.forensics || []).length
+                );
+            }
 
             // Initialize tooltips
             const cells = document.querySelectorAll('.path-cell, .behavior-cell');
