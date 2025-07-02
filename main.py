@@ -18,11 +18,36 @@ import hashlib
 import secrets
 import platform
 import subprocess
-from datetime import datetime
 from pathlib import Path
 import webbrowser
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+
+# Import datetime safely for cross-platform compatibility
+try:
+    from datetime import datetime
+    DATETIME_AVAILABLE = True
+except ImportError:
+    DATETIME_AVAILABLE = False
+    datetime = None
+
+def safe_datetime_now():
+    """Safely get current datetime string"""
+    if DATETIME_AVAILABLE and datetime:
+        try:
+            return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            pass
+    return "Unknown"
+
+def safe_datetime_iso():
+    """Safely get current datetime in ISO format"""
+    if DATETIME_AVAILABLE and datetime:
+        try:
+            return datetime.now().isoformat()
+        except:
+            pass
+    return "Unknown"
 
 # Third-party imports (with graceful fallbacks)
 try:
@@ -1385,20 +1410,37 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
             
             from flask import Flask, render_template, request, jsonify
             
-            app = Flask(__name__, template_folder='templates')
+            # Check template directory exists
+            template_dir = Path(__file__).parent / 'templates'
+            if not template_dir.exists():
+                print(f"❌ Template directory not found: {template_dir}")
+                print("💡 Make sure templates/log.html exists")
+                return
+            
+            if not (template_dir / 'log.html').exists():
+                print(f"❌ Template file not found: {template_dir / 'log.html'}")
+                print("💡 Make sure templates/log.html exists")
+                return
+            
+            print(f"✅ Using template directory: {template_dir}")
+            app = Flask(__name__, template_folder=str(template_dir))
             
             def load_latest_scan_data():
                 """Load the latest scan data from JSON files"""
                 try:
                     if not self.logs_dir.exists():
+                        print(f"📁 Creating logs directory: {self.logs_dir}")
+                        self.logs_dir.mkdir(parents=True, exist_ok=True)
                         return [], [], [], []
                     
                     json_files = list(self.logs_dir.glob('scan_*.json'))
                     if not json_files:
+                        print("📄 No scan files found. Run a scan first with --scan")
                         return [], [], [], []
                     
                     # Get the latest scan file
                     latest_file = max(json_files, key=lambda x: x.stat().st_mtime)
+                    print(f"📊 Loading scan data from: {latest_file}")
                     
                     with open(latest_file, 'r', encoding='utf-8') as f:
                         data = json.load(f)
@@ -1416,15 +1458,35 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                         elif threat.get('severity') == 'critical':
                             score = 95
                         
+                        # Handle timestamp safely
+                        timestamp = threat.get('timestamp', data.get('scan_info', {}).get('timestamp', 'Unknown'))
+                        if timestamp and timestamp != 'Unknown':
+                            try:
+                                # Try to format ISO timestamp to readable format
+                                if DATETIME_AVAILABLE and datetime and 'T' in timestamp:
+                                    dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                                    timestamp = dt.strftime("%Y-%m-%d %H:%M:%S")
+                            except:
+                                pass  # Keep original timestamp if parsing fails
+                        
                         threats.append({
                             'path': threat.get('file', 'Unknown'),
                             'type': threat.get('threat_type', 'Unknown'),
                             'score': score,
                             'behavior': threat.get('description', 'No description'),
-                            'timestamp': threat.get('timestamp', data.get('scan_info', {}).get('timestamp', 'Unknown'))
+                            'timestamp': timestamp
                         })
                     
                     # Add file scan results as potential threats
+                    base_timestamp = data.get('scan_info', {}).get('timestamp', 'Unknown')
+                    if base_timestamp and base_timestamp != 'Unknown':
+                        try:
+                            if DATETIME_AVAILABLE and datetime and 'T' in base_timestamp:
+                                dt = datetime.fromisoformat(base_timestamp.replace('Z', '+00:00'))
+                                base_timestamp = dt.strftime("%Y-%m-%d %H:%M:%S")
+                        except:
+                            pass
+                    
                     for file_info in data.get('files_scanned', []):
                         if file_info.get('status') == 'suspicious':
                             threats.append({
@@ -1432,7 +1494,7 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                                 'type': 'Suspicious File',
                                 'score': 45,  # Medium threat score
                                 'behavior': f"File extension: {file_info.get('extension', 'unknown')} - {file_info.get('reason', 'No reason')}",
-                                'timestamp': data.get('scan_info', {}).get('timestamp', 'Unknown')
+                                'timestamp': base_timestamp
                             })
                     
                     # Create dummy mitigation data
@@ -1452,27 +1514,66 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
                             'process_name': 'BackdoorBuster Scanner',
                             'pid': '1234',
                             'memory_data': f"Scanned {len(data['files_scanned'])} files",
-                            'timestamp': data.get('scan_info', {}).get('timestamp', 'Unknown')
+                            'timestamp': base_timestamp
                         })
                     
                     log_files = [f.name for f in json_files]
                     
+                    print(f"✅ Loaded {len(threats)} threats, {len(mitigations)} mitigations, {len(forensics)} forensics")
                     return threats, mitigations, forensics, log_files
                     
                 except Exception as e:
                     print(f"❌ Error loading scan data: {e}")
+                    import traceback
+                    traceback.print_exc()
                     return [], [], [], []
             
             @app.route('/')
             def index():
-                threats, mitigations, forensics, log_files = load_latest_scan_data()
+                try:
+                    threats, mitigations, forensics, log_files = load_latest_scan_data()
+                    
+                    # Get current timestamp safely
+                    try:
+                        current_time = safe_datetime_now()
+                    except Exception:
+                        current_time = "Unknown"
+                    
+                    print(f"🌐 Rendering web dashboard with {len(threats)} threats")
+                    
+                    return render_template('log.html', 
+                                         log_files=log_files,
+                                         threats=threats,
+                                         mitigations=mitigations,
+                                         forensics=forensics,
+                                         generated_at=current_time)
                 
-                return render_template('log.html', 
-                                     log_files=log_files,
-                                     threats=threats,
-                                     mitigations=mitigations,
-                                     forensics=forensics,
-                                     generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                except Exception as e:
+                    print(f"❌ Error in index route: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    
+                    # Return a simple error page
+                    error_html = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head><title>BackdoorBuster - Error</title></head>
+                    <body>
+                        <h1>🛡️ BackdoorBuster Web Interface</h1>
+                        <h2>❌ Error Loading Dashboard</h2>
+                        <p><strong>Error:</strong> {str(e)}</p>
+                        <p><strong>Solution:</strong></p>
+                        <ul>
+                            <li>Run a scan first: <code>python3 main.py --scan /path/to/scan</code></li>
+                            <li>Check if templates/log.html exists</li>
+                            <li>Install dependencies: <code>pip3 install --user Flask Jinja2</code></li>
+                        </ul>
+                        <p><em>Created by Shieldpy - https://shieldpy.com</em></p>
+                    </body>
+                    </html>
+                    """
+                    from flask import Response
+                    return Response(error_html, mimetype='text/html')
             
             @app.route('/api/scan-data')
             def api_scan_data():
@@ -1509,13 +1610,15 @@ Created by Shieldpy - shieldpy.com | GitHub: github.com/Qixpy
             self.logs_dir.mkdir(exist_ok=True)
             
             # Generate timestamp for log file
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = safe_datetime_now().replace("-", "").replace(":", "").replace(" ", "_")
+            if timestamp == "Unknown":
+                timestamp = str(int(time.time()))  # Fallback to epoch time
             log_filename = f"scan_{timestamp}.json"
             log_path = self.logs_dir / log_filename
             
             scan_results = {
                 "scan_info": {
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": safe_datetime_iso(),
                     "target_directory": str(directory),
                     "scanner": "BackdoorBuster v1.0",
                     "scan_type": "directory_scan"

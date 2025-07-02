@@ -308,18 +308,62 @@ python3 main.py --help
 - **Empty Log Files**: Update to latest version with `git pull origin main`
 - **No Scan Results**: Logs are created in `./logs/` directory after scanning
 
-### **🌐 Web Server Issues**
+### **🐧 Kali Linux Web Server Issues**
 
-If web server fails to start:
+If you get "Internal Error" on Kali Linux when starting the web server:
+
+**Quick Diagnostic:**
 ```bash
-# Install required dependencies
+chmod +x diagnose_web_kali.sh && ./diagnose_web_kali.sh
+```
+
+**Common Kali Linux Issues:**
+
+1. **Missing Dependencies:**
+```bash
+# Install Flask and Jinja2
 pip3 install --user Flask Jinja2
 
-# Test web server
-python3 main.py --web-server
+# Alternative: system packages
+sudo apt install python3-flask python3-jinja2
+```
 
-# Alternative: Check if templates directory exists
-ls -la templates/
+2. **No Scan Data:**
+```bash
+# Run a scan first to generate data
+python3 main.py --scan /tmp
+python3 main.py --scan /etc /usr/bin
+
+# Then start web server
+python3 main.py --web
+```
+
+3. **Template Path Issues:**
+```bash
+# Check templates exist
+ls -la templates/log.html
+
+# Fix permissions if needed
+chmod 644 templates/log.html
+```
+
+4. **Python Path Issues:**
+```bash
+# Use full path if needed
+cd ~/BackdoorBuster
+python3 $(pwd)/main.py --web
+```
+
+5. **Port Already in Use:**
+```bash
+# Use different port
+python3 main.py --web --port 8080
+```
+
+**Kali Debug Mode:**
+```bash
+# Start with verbose output
+python3 main.py --web 2>&1 | tee web_debug.log
 ```
 
 **Web Server Troubleshooting:**
